@@ -5,6 +5,7 @@ import re
 import os
 import datetime
 from keep_alive import keep_alive
+import mergesort
 
 #FUNCTION:    msg_contains_word()
 #ARGUEMENTS:  String msg, String word
@@ -256,7 +257,8 @@ async def adddeadline(ctx, *args):
 	else :
 		# Append wordToAdd to the end of the bannedWords list
 		deadlines.append(word)
-
+		mergesort.bubblesort(deadlines)
+		print(deadlines)
 		# Update the config.json file to include the new banned word
 		with open("./config.json", "r+") as f:
 			data = json.load(f)
@@ -317,6 +319,8 @@ async def removedeadline(ctx, indextoremove):
         await ctx.send(deadlinename + "Have Been Removed")
     else:
         await ctx.send("That Deadline not available")
+
+
 
 if token != "":
     bot.run(token)
