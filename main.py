@@ -3,7 +3,7 @@ from discord.ext import commands
 import json
 import re
 import os
-from datetime import datetime
+import datetime
 from keep_alive import keep_alive
 
 #FUNCTION:    msg_contains_word()
@@ -97,7 +97,7 @@ async def serverinfo(ctx):
     for emoji in emojis:
         emojiString += str(emoji)
 
-    timeNow = datetime.utcnow()
+    timeNow = datetime.datetime.utcnow()
     serverAge = timeNow - server.created_at
     serverAgeInS = serverAge.total_seconds()
     serverAgeYears = divmod(serverAgeInS, 31536000)
@@ -221,36 +221,6 @@ async def removebannedword(ctx, wordToRemove):
     else:
         await ctx.send("That word isn't currently banned.")
 
-#FUNCTION:    adminwordbanbypass()
-#ARGUEMENTS:  Discord.context ctx, String enableBypass
-#RETURNS:     Nothing
-#DESCRIPTION: Changes whether or not admins are allowed to use banned words.     
-@bot.command(description="Changes whether or not admins are allowed to use banned words.", help="enableBypass(required) = True/False. \n**REQUIRES ADMINISTRATOR PERMISSIONS**.")
-@commands.has_permissions(administrator=True)
-async def adminwordbanbypass(ctx, enableBypass):
-    bypassBool = None
-
-    #Convert the string enableBypass to the bool bypassBool
-    if enableBypass.lower() == "true":
-        bypassBool = True
-    elif enableBypass.lower() == "false":
-        bypassBool = False
-    else:
-        await ctx.send("That is not a valid parameter, adminwordbanbypass only takes values of true or false.")
-
-    if bypassBool != None:
-        #Change the global variable adminBannedWordBypass to the value of bypassBool
-        global adminBannedWordBypass
-        adminBannedWordBypass = bypassBool
-
-        #Edit the value of adminBannedWordBypass in the json file 
-        with open("./config.json", "r+") as f:
-                data = json.load(f)
-                data["adminBannedWordBypass"] = bypassBool
-                f.seek(0)
-                f.write(json.dumps(data))
-                f.truncate()
-
 #FUNCTION:    clear()
 #ARGUEMENTS:  Discord.context ctx, Int amount
 #RETURNS:     Nothing
@@ -260,67 +230,6 @@ async def adminwordbanbypass(ctx, enableBypass):
 async def clear(ctx, amount=10):
     amount += 1
     await ctx.channel.purge(limit=amount)
-    
-#FUNCTION:    banlist()
-#ARGUEMENTS:  Discord.context ctx
-#RETURNS:     Nothing
-#DESCRIPTION: Gets a list of all users banned from the channel.
-@bot.command(description="Gets a list of all users banned from the channel.", help="\n**REQUIRES BAN MEMEBERS PERMISSIONS**.")
-@commands.has_permissions(ban_members=True)
-async def banlist(ctx):
-    banList = await ctx.guild.bans()
-    banString = ""
-    count = 0
-
-    if len(banList) > 0:
-        for ban in banList:
-            user = ban.user
-            reason = ban.reason
-
-            count += 1
-            banString += f"[{count}: {user.name} | #{user.discriminator} | {user.id} |  {reason}]\n"
-
-        await ctx.send(f"```css\nSERVER BANS (NUMBER, USERNAME, USER DISCRIMINATOR, USER ID, BAN REASON):\n\n{banString}\n```")
-    else:
-        await ctx.send("There are no users currently banned from this server")
-
-#FUNCTION:    ban()
-#ARGUEMENTS:  Discord.context ctx, Discord.Member member, String Reason
-#RETURNS:     Nothing
-#DESCRIPTION: Bans a user from the server.
-@bot.command(description="Bans a user from the server.", help="member(required) = A discord members mention e.g. @member, reason(optional) = A string containing a reason for the ban. \n**REQUIRES BAN MEMEBERS PERMISSIONS**.")
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member : discord.Member, *, reason=None):
-    await member.ban(reason=reason)
-    await ctx.send(f"Banned player {member.mention}")
-
-#FUNCTION:    unban()
-#ARGUEMENTS:  Discord.context ctx, Discord.Member member
-#RETURNS:     Nothing
-#DESCRIPTION: Unbans a user from the server.
-@bot.command(description="Unbans a user from the server.", help="member(required) = A discord member e.g. user#1224. \n**REQUIRES BAN MEMBERS PERMISSIONS**.")
-@commands.has_permissions(ban_members=True)
-async def unban(ctx, *, member):
-    bannedUsers = await ctx.guild.bans()
-    name, discriminator = member.split("#")
-
-    for ban in bannedUsers:
-        user = ban.user
-
-        if (user.name, user.discriminator) == (name, discriminator):
-            await ctx.guild.unban(user)
-            await ctx.send(f"Unbanned {user.mention}")
-            return
-
-#FUNCTION:    kick()
-#ARGUEMENTS:  Discord.context ctx, Discord.Member member, String Reason
-#RETURNS:     Nothing
-#DESCRIPTION: Kicks a user from the server.
-@bot.command(description="Kicks a user from the server.", help="member(required) = A discord members mention e.g. @member, reason(optional) = A string containing a reason for the kick. \n**REQUIRES KICK MEMBERS PERMISSIONS**.")
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, member : discord.Member, *, reason=None):
-    await member.kick(reason=reason)
-    await ctx.send(f"Kicked player {member.mention}")
 
 #FUNCTION:    getdeadline()
 #ARGUEMENTS:  Discord.context ctx
@@ -328,9 +237,11 @@ async def kick(ctx, member : discord.Member, *, reason=None):
 #DESCRIPTION: Get All Deadline Task.
 @bot.command(description="Get All Deadline Task.")
 async def getdeadline(ctx):
+	numbering = 1
 	await ctx.send("Your Deadline Is")
 	for deadline in deadlines:
-		await ctx.send(deadline)
+		await ctx.send(str(numbering) + '. ' + deadline)
+		numbering+=1
 
 #FUNCTION:    adddeadline()
 #ARGUEMENTS:  Discord.context ctx
@@ -384,6 +295,28 @@ async def help(ctx):
 
     await ctx.author.send(embed=embed)
 
+#FUNCTION:    removedeadline()
+#ARGUEMENTS:  Discord.context ctx
+#RETURNS:     Nothing
+#DESCRIPTION: Sends the author command help based on the command they can access.
+@bot.command(description="Displays this menu")
+async def removedeadline(ctx, indextoremove):
+    #Check if the word is in the bannedWords list
+    if len(deadlines)>0:
+        deadlinename = deadlines[int(indextoremove)-1]
+        deadlines.remove(deadlinename)
+        with open("./config.json", "r+") as f:
+            data = json.load(f)
+            data["deadlines"] = deadlines
+            f.seek(0)
+            f.write(json.dumps(data))
+            f.truncate()
+        
+        #Delete the command authors message to hide the word.
+        await ctx.message.delete()
+        await ctx.send(deadlinename + "Have Been Removed")
+    else:
+        await ctx.send("That Deadline not available")
 
 if token != "":
     bot.run(token)
