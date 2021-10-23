@@ -337,14 +337,13 @@ async def help(ctx):
     await ctx.author.send(embed=embed)
 
 #FUNCTION:    removedeadline()
-# ARGUEMENTS:  Discord.context ctx
+# ARGUEMENTS:  Discord.context ctx, number Indextoremove
 #RETURNS:     Nothing
-# DESCRIPTION: Sends the author command help based on the command they can access.
+# DESCRIPTION: Remove Deadline From List According to Inputed Index.
 
 
-@bot.command(description="Remove Deadline From List")
+@bot.command(description="Remove Deadline From List According to Inputed Index")
 async def removedeadline(ctx, indextoremove):
-    # Check if the word is in the bannedWords list
     if len(deadlines) > 0:
         deadlinename = deadlines[int(indextoremove)-1]
         deadlines.remove(deadlinename)
@@ -354,9 +353,6 @@ async def removedeadline(ctx, indextoremove):
             f.seek(0)
             f.write(json.dumps(data))
             f.truncate()
-
-        # Delete the command authors message to hide the word.
-        await ctx.message.delete()
         await ctx.send(deadlinename + " Have Been Removed")
     else:
         await ctx.send("That Deadline not available")
@@ -364,16 +360,15 @@ async def removedeadline(ctx, indextoremove):
 #FUNCTION:    refresh()
 # ARGUEMENTS:  Discord.context ctx
 #RETURNS:     Nothing
-# DESCRIPTION: Sends the author command help based on the command they can access.
+# DESCRIPTION: Send All Deadline That They Have.
 
 
-@bot.command(description="Displays this menu")
+@bot.command(description="Send All Deadline That They Have")
 async def refresh(ctx):
-    # Check if the word is in the bannedWords list
-    # mergesort.bubblesort(deadlines)
     message = ""
     for deadline in deadlines:
         if mergesort.takedate(deadline) < mergesort.convertdate(datetime.datetime.now()):
+            print(deadline)
             deadlines.remove(deadline)
         elif mergesort.takedate(deadline) == mergesort.convertdate(datetime.datetime.now()):
             message += ('\n' + deadline)
